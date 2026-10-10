@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate, requireRole } from '../middleware/auth';
 import prisma from '../db/prisma';
 import { ConsultationNote } from '../db/models/ConsultationNote';
-import { publishEvent, RK_APPT } from '../services/publisher';
+import { publishEvent } from '../services/publisher';
 
 const router = Router();
 
@@ -82,7 +82,7 @@ router.post('/', authenticate, requireRole('PATIENT'), async (req, res) => {
     });
 
     // Publish event for email
-    publishEvent(RK_APPT, {
+    publishEvent('appointment.confirmed', {
       patientEmail: appt.patient.profile.email,
       patientName: appt.patient.profile.full_name,
       doctorName: doctor.profile.full_name,
@@ -100,7 +100,7 @@ router.post('/', authenticate, requireRole('PATIENT'), async (req, res) => {
 // GET /consultation-notes/:appointmentId
 // Patient: own, Doctor: own
 router.get('/consultation-notes/:appointmentId', authenticate, requireRole('PATIENT', 'DOCTOR'), async (req, res) => {
-  const { appointmentId } = req.params;
+  const appointmentId = req.params.appointmentId as string;
   const { id: userId, role } = req.user!;
 
   const appt = await prisma.appointments.findUnique({
@@ -134,7 +134,7 @@ router.post('/:id/complete', authenticate, requireRole('DOCTOR'), async (req, re
     const doctor = await prisma.doctors.findUnique({ where: { profile_id: userId } });
     if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
 
-    const appt = await prisma.appointments.findUnique({ where: { id: appointmentId } });
+    const appt = await prisma.appointments.findUnique({ where: { id: appointmentId as string } });
     if (!appt) return res.status(404).json({ error: 'Appointment not found' });
 
     if (appt.doctor_id !== doctor.id) {
@@ -162,7 +162,7 @@ router.post('/:id/complete', authenticate, requireRole('DOCTOR'), async (req, re
       if (prescriptionItems && prescriptionItems.length > 0) {
         const presc = await tx.prescriptions.create({
           data: {
-            appointment_id: appointmentId,
+            appointment_id: appointmentId as string,
             patient_id: appt.patient_id,
             doctor_id: appt.doctor_id,
             status: 'PENDING'
@@ -180,7 +180,7 @@ router.post('/:id/complete', authenticate, requireRole('DOCTOR'), async (req, re
       }
 
       await tx.appointments.update({
-        where: { id: appointmentId },
+        where: { id: appointmentId as string },
         data: { status: 'COMPLETED' }
       });
     });

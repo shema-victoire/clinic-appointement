@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate, requireRole } from '../middleware/auth';
 import prisma from '../db/prisma';
-import { publishEvent, RK_PRESC } from '../services/publisher';
+import { publishEvent } from '../services/publisher';
 
 const router = Router();
 
@@ -41,7 +41,7 @@ router.get('/', authenticate, async (req, res) => {
 // PUT /prescriptions/:id/fulfill
 // Admin only
 router.put('/:id/fulfill', authenticate, requireRole('ADMIN'), async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   try {
     const presc = await prisma.prescriptions.findUnique({
@@ -91,7 +91,7 @@ router.put('/:id/fulfill', authenticate, requireRole('ADMIN'), async (req, res) 
     });
 
     // Publish event
-    publishEvent(RK_PRESC, {
+    publishEvent('prescription.fulfilled', {
       patientEmail: presc.patient.profile.email,
       patientName: presc.patient.profile.full_name,
       date: presc.appointment.appointment_date
