@@ -16,9 +16,13 @@ import { connectMongo } from './db/mongoose';
 import { connectRabbitMQ } from './db/rabbitmq';
 
 // Route modules
-import healthRouter   from './routes/health';
-import authRouter     from './routes/auth';
-import rbacTestRouter from './routes/rbacTest';
+import healthRouter       from './routes/health';
+import authRouter         from './routes/auth';
+import usersRouter        from './routes/users';
+import doctorsRouter      from './routes/doctors';
+import medicationsRouter  from './routes/medications';
+import appointmentsRouter from './routes/appointments';
+import prescriptionsRouter from './routes/prescriptions';
 
 async function bootstrap() {
   // ── External connections ────────────────────────────────────────────────
@@ -32,9 +36,13 @@ async function bootstrap() {
   app.use(express.json());
 
   // ── Routes ───────────────────────────────────────────────────────────────
-  app.use('/health',  healthRouter);
-  app.use('/auth',    authRouter);
-  app.use('/rbac',    rbacTestRouter);   // Checkpoint 1 demo only
+  app.use('/health',        healthRouter);
+  app.use('/auth',          authRouter);
+  app.use('/users',         usersRouter);
+  app.use('/doctors',       doctorsRouter);
+  app.use('/medications',   medicationsRouter);
+  app.use('/appointments',  appointmentsRouter);
+  app.use('/prescriptions', prescriptionsRouter);
 
   // ── Start ────────────────────────────────────────────────────────────────
   app.listen(env.port, () => {
