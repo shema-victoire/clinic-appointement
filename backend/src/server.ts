@@ -32,7 +32,7 @@ async function bootstrap() {
   // ── Express app ─────────────────────────────────────────────────────────
   const app = express();
 
-  app.use(cors({ origin: env.frontendUrl }));
+  app.use(cors({ origin: env.frontendUrl, credentials: true }));
   app.use(express.json());
 
   // ── Routes ───────────────────────────────────────────────────────────────
@@ -43,6 +43,12 @@ async function bootstrap() {
   app.use('/medications',   medicationsRouter);
   app.use('/appointments',  appointmentsRouter);
   app.use('/prescriptions', prescriptionsRouter);
+
+  // Alias for GET /consultation-notes/:appointmentId per SPEC.md
+  app.get('/consultation-notes/:appointmentId', (req, res, next) => {
+    req.url = `/consultation-notes/${req.params.appointmentId}`;
+    appointmentsRouter(req, res, next);
+  });
 
   // ── Start ────────────────────────────────────────────────────────────────
   app.listen(env.port, () => {
