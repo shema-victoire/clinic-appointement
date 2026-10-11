@@ -22,7 +22,7 @@ jest.mock('../middleware/auth', () => {
 // Import the actual requireRole so it uses the mocked req.user
 const { requireRole } = jest.requireActual('../middleware/auth');
 
-// 2. Mock Prisma and Mongoose to avoid real DB calls during RBAC/Validation tests
+// 2. Mock Prisma to avoid real DB calls
 jest.mock('../db/prisma', () => ({
   __esModule: true,
   default: {
@@ -31,7 +31,8 @@ jest.mock('../db/prisma', () => ({
       create: jest.fn().mockResolvedValue({ id: 'appt1', patient: { profile: { email: 'a', full_name: 'b' } } })
     },
     patients: {
-      findUnique: jest.fn().mockResolvedValue({ id: 'pat1' })
+      findUnique: jest.fn().mockResolvedValue({ id: 'pat1' }),
+      create: jest.fn().mockResolvedValue({ id: 'patient1' })
     },
     doctors: {
       findUnique: jest.fn().mockResolvedValue({ id: 'doc1', profile: { full_name: 'doc' } })
@@ -44,6 +45,10 @@ jest.mock('../db/prisma', () => ({
           { quantity: 10, medication: { name: 'M1', quantity_in_stock: 5 } } // Insufficient stock!
         ]
       })
+    },
+    profiles: {
+      upsert: jest.fn(),
+      findUnique: jest.fn()
     }
   }
 }));
@@ -52,14 +57,34 @@ jest.mock('../services/publisher', () => ({
   publishEvent: jest.fn()
 }));
 
+// Mock Supabase so auth route tests never hit the network
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({
+    auth: {
+      admin: {
+        getUserById: jest.fn().mockResolvedValue({
+          data: {
+            user: {
+              email: 'race@example.com',
+              user_metadata: { full_name: 'Race User' }
+            }
+          }
+        })
+      }
+    }
+  }))
+}));
+
 // 3. Setup Express app with our routes for testing
 import appointmentsRouter from '../routes/appointments';
 import prescriptionsRouter from '../routes/prescriptions';
+import authRouter from '../routes/auth';
 
 const app = express();
 app.use(express.json());
 app.use('/appointments', appointmentsRouter);
 app.use('/prescriptions', prescriptionsRouter);
+app.use('/auth', authRouter);
 
 const request = supertest(app);
 
@@ -187,6 +212,63 @@ describe('Clinic Endpoints', () => {
 
       const res = await request.get('/appointments/appt1').set('x-mock-role', 'PATIENT');
       expect(res.status).toBe(403);
+    });
+  });
+
+  describe('POST /auth/me – P2002 race-safety', () => {
+    it('returns 200 with profile when upsert throws P2002 and fallback read succeeds', async () => {
+      const prisma = require('../db/prisma').default;
+      const { Prisma } = require('@prisma/client');
+
+      // Simulate the loser of the race: upsert throws P2002
+      const p2002 = new Prisma.PrismaClientKnownRequestError(
+        'Unique constraint failed on the fields: (id)',
+        { code: 'P2002', clientVersion: '5.0.0' }
+      );
+      prisma.profiles.upsert.mockRejectedValueOnce(p2002);
+
+      // The fallback read returns the already-existing profile
+      const existingProfile = {
+        id: 'mock-user-id',
+        full_name: 'Race User',
+        email: 'race@example.com',
+        role: 'PATIENT'
+      };
+      prisma.profiles.findUnique.mockResolvedValueOnce(existingProfile);
+
+      // patients row already exists – no create needed
+      prisma.patients.findUnique.mockResolvedValueOnce({ id: 'patient1' });
+
+      const res = await request
+        .post('/auth/me')
+        .set('x-mock-role', 'PATIENT');
+
+      expect(res.status).toBe(200);
+      expect(res.body.profile).toMatchObject({
+        id: 'mock-user-id',
+        role: 'PATIENT'
+      });
+    });
+
+    it('returns 200 with profile on normal (non-race) first login', async () => {
+      const prisma = require('../db/prisma').default;
+
+      const newProfile = {
+        id: 'mock-user-id',
+        full_name: 'Race User',
+        email: 'race@example.com',
+        role: 'PATIENT'
+      };
+      prisma.profiles.upsert.mockResolvedValueOnce(newProfile);
+      prisma.patients.findUnique.mockResolvedValueOnce(null); // new patient
+      prisma.patients.create.mockResolvedValueOnce({ id: 'patient1' });
+
+      const res = await request
+        .post('/auth/me')
+        .set('x-mock-role', 'PATIENT');
+
+      expect(res.status).toBe(200);
+      expect(res.body.profile.role).toBe('PATIENT');
     });
   });
 
