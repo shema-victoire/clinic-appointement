@@ -2,6 +2,15 @@ import { supabase } from './supabase';
 
 const BASE = import.meta.env.VITE_API_URL ?? '';
 
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+    this.name = 'ApiError';
+  }
+}
+
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData.session?.access_token;
@@ -14,7 +23,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error((body as { error?: string }).error ?? response.statusText);
+    throw new ApiError((body as { error?: string }).error ?? response.statusText, response.status);
   }
 
   return response.json() as Promise<T>;
