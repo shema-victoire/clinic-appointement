@@ -17,8 +17,8 @@ import MyPrescriptions from './pages/patient/MyPrescriptions';
 import DoctorAppointments from './pages/doctor/Appointments';
 import AppointmentDetail from './pages/doctor/AppointmentDetail';
 import AdminUsers from './pages/admin/Users';
+import AdminAppointments from './pages/admin/Appointments';
 import {
-  AdminAppointmentsPage,
   AdminPrescriptionsPage,
   AdminMedicationsPage,
 } from './pages/admin/AdminPages';
@@ -65,7 +65,7 @@ export default function App() {
           <RoleGuard allow={['ADMIN']}>
             <Routes>
               <Route path="users" element={<AdminUsers />} />
-              <Route path="appointments" element={<AdminAppointmentsPage />} />
+              <Route path="appointments" element={<AdminAppointments />} />
               <Route path="prescriptions" element={<AdminPrescriptionsPage />} />
               <Route path="medications" element={<AdminMedicationsPage />} />
               <Route path="*" element={<Navigate to="users" replace />} />
