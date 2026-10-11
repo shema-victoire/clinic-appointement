@@ -14,8 +14,8 @@ import LoginPage from './pages/LoginPage';
 import BookAppointment from './pages/patient/BookAppointment';
 import MyAppointments from './pages/patient/MyAppointments';
 import MyPrescriptions from './pages/patient/MyPrescriptions';
+import DoctorAppointments from './pages/doctor/Appointments';
 import {
-  DoctorAppointmentsPage,
   DoctorAppointmentDetailPage,
 } from './pages/doctor/DoctorPages';
 import {
@@ -52,7 +52,7 @@ export default function App() {
         element={
           <RoleGuard allow={['DOCTOR']}>
             <Routes>
-              <Route path="appointments" element={<DoctorAppointmentsPage />} />
+              <Route path="appointments" element={<DoctorAppointments />} />
               <Route path="appointments/:id" element={<DoctorAppointmentDetailPage />} />
               <Route path="*" element={<Navigate to="appointments" replace />} />
             </Routes>
