@@ -18,8 +18,8 @@ import DoctorAppointments from './pages/doctor/Appointments';
 import AppointmentDetail from './pages/doctor/AppointmentDetail';
 import AdminUsers from './pages/admin/Users';
 import AdminAppointments from './pages/admin/Appointments';
+import AdminPrescriptions from './pages/admin/Prescriptions';
 import {
-  AdminPrescriptionsPage,
   AdminMedicationsPage,
 } from './pages/admin/AdminPages';
 
@@ -66,7 +66,7 @@ export default function App() {
             <Routes>
               <Route path="users" element={<AdminUsers />} />
               <Route path="appointments" element={<AdminAppointments />} />
-              <Route path="prescriptions" element={<AdminPrescriptionsPage />} />
+              <Route path="prescriptions" element={<AdminPrescriptions />} />
               <Route path="medications" element={<AdminMedicationsPage />} />
               <Route path="*" element={<Navigate to="users" replace />} />
             </Routes>
