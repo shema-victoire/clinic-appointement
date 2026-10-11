@@ -192,4 +192,21 @@ router.post('/:id/complete', authenticate, requireRole('DOCTOR'), async (req, re
   }
 });
 
+// GET /appointments/:id - doctor own only
+router.get('/:id', authenticate, requireRole('DOCTOR'), async (req, res) => {
+  const { id: appointmentId } = req.params as { id: string };
+  const userId = req.user!.id;
+  const doctor = await prisma.doctors.findUnique({ where: { profile_id: userId } });
+  if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
+
+  const appt = await prisma.appointments.findUnique({
+    where: { id: appointmentId },
+    include: { patient: { include: { profile: true } }, doctor: { include: { profile: true } } },
+  });
+  if (!appt) return res.status(404).json({ error: 'Appointment not found' });
+  if (appt.doctor_id !== doctor.id) return res.status(403).json({ error: 'Forbidden' });
+  res.json(appt);
+});
+
+
 export default router;

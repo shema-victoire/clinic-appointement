@@ -84,7 +84,7 @@ router.put('/:id/fulfill', authenticate, requireRole('ADMIN'), async (req, res) 
       // 2. Decrement stock for each medication
       for (const item of presc.items) {
         await tx.medications.update({
-          where: { id: item.medication_id },
+          where: { id: item.medication?.id ?? item.medication_id },
           data: { quantity_in_stock: { decrement: item.quantity } }
         });
       }
