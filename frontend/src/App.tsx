@@ -13,9 +13,7 @@ import { RoleGuard } from './components/RoleGuard';
 import LoginPage from './pages/LoginPage';
 import BookAppointment from './pages/patient/BookAppointment';
 import MyAppointments from './pages/patient/MyAppointments';
-import {
-  PatientPrescriptionsPage,
-} from './pages/patient/PatientPages';
+import MyPrescriptions from './pages/patient/MyPrescriptions';
 import {
   DoctorAppointmentsPage,
   DoctorAppointmentDetailPage,
@@ -41,7 +39,7 @@ export default function App() {
             <Routes>
               <Route path="book" element={<BookAppointment />} />
               <Route path="appointments" element={<MyAppointments />} />
-              <Route path="prescriptions" element={<PatientPrescriptionsPage />} />
+              <Route path="prescriptions" element={<MyPrescriptions />} />
               <Route path="*" element={<Navigate to="book" replace />} />
             </Routes>
           </RoleGuard>
