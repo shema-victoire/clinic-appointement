@@ -54,7 +54,8 @@ export function useAuth(): AuthContextValue {
 function homeForRole(role: Profile['role']): string {
   if (role === 'PATIENT') return '/patient/book';
   if (role === 'DOCTOR') return '/doctor/appointments';
-  return '/admin/users';
+  if (role === 'ADMIN') return '/admin/users';
+  return '/login'; // Fallback for invalid role
 }
 
 // ── Provider ─────────────────────────────────────────────────────────────────
@@ -71,7 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadProfile = useCallback(
     async (_currentUser: User) => {
       try {
-        const p = await api<Profile>('/auth/me', { method: 'POST' });
+        const res = await api<{ profile: Profile }>('/auth/me', { method: 'POST' });
+        const p = res.profile;
         setProfile(p);
         if (location.pathname === '/login') {
           navigate(homeForRole(p.role), { replace: true });

@@ -8,12 +8,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../auth';
 import type { Profile } from '../auth';
-
-function homeForRole(role: Profile['role']): string {
-  if (role === 'PATIENT') return '/patient/book';
-  if (role === 'DOCTOR') return '/doctor/appointments';
-  return '/admin/users';
-}
+import { NavBar } from './NavBar';
 
 interface RoleGuardProps {
   allow: Profile['role'][];
@@ -26,7 +21,7 @@ export function RoleGuard({ allow, children }: RoleGuardProps) {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <span className="text-gray-500">Loading…</span>
+        <h1 className="text-xl font-semibold text-gray-500">Loading...</h1>
       </div>
     );
   }
@@ -36,8 +31,20 @@ export function RoleGuard({ allow, children }: RoleGuardProps) {
   }
 
   if (!allow.includes(profile.role)) {
-    return <Navigate to={homeForRole(profile.role)} replace />;
+    return (
+      <>
+        <NavBar />
+        <div className="flex min-h-screen items-center justify-center">
+          <h1 className="text-xl font-bold text-red-600">Not allowed</h1>
+        </div>
+      </>
+    );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <NavBar />
+      {children}
+    </>
+  );
 }

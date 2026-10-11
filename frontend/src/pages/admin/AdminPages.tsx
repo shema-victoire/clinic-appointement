@@ -1,15 +1,9 @@
-/** Placeholder admin pages – full screens coming next */
-import { NavBar } from '../../components/NavBar';
-
 function Placeholder({ title }: { title: string }) {
   return (
-    <>
-      <NavBar />
-      <main className="mx-auto max-w-[1100px] px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
-        <p className="mt-2 text-gray-500">Coming next</p>
-      </main>
-    </>
+    <main className="mx-auto max-w-[1100px] px-4 py-12 text-center">
+      <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
+      <p className="mt-2 text-gray-500">Coming next</p>
+    </main>
   );
 }
 
