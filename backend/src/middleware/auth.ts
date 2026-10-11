@@ -45,6 +45,7 @@ export async function authenticate(
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.error('Auth Error: Missing or malformed Authorization header');
     res.status(401).json({ error: 'Missing or malformed Authorization header' });
     return;
   }
@@ -55,6 +56,7 @@ export async function authenticate(
   const { data, error } = await supabase.auth.getUser(token);
 
   if (error || !data.user) {
+    console.error('Auth Error: Invalid or expired token', error?.message || 'No user data');
     res.status(401).json({ error: 'Invalid or expired token' });
     return;
   }
@@ -66,6 +68,11 @@ export async function authenticate(
   });
 
   if (!profile) {
+    if (req.originalUrl.includes('/auth/me')) {
+      req.user = { id: data.user.id, email: data.user.email || '', role: '' };
+      return next();
+    }
+    console.error('Auth Error: Profile not found for verified user', data.user.id);
     res.status(401).json({ error: 'Profile not found. Please sign in again.' });
     return;
   }
