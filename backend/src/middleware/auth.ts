@@ -68,7 +68,8 @@ export async function authenticate(
   });
 
   if (!profile) {
-    if (req.originalUrl.includes('/auth/me')) {
+    const urlPath = req.originalUrl.split('?')[0];
+    if (req.method === 'POST' && urlPath === '/auth/me') {
       req.user = { id: data.user.id, email: data.user.email || '', role: '' };
       return next();
     }

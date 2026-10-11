@@ -123,4 +123,71 @@ describe('Clinic Endpoints', () => {
     });
   });
 
+  describe('GET /appointments/:id RBAC', () => {
+    it('allows Admin to view any appointment', async () => {
+      const prisma = require('../db/prisma').default;
+      prisma.appointments.findUnique.mockResolvedValueOnce({
+        id: 'appt1',
+        patient_id: 'pat1',
+        doctor_id: 'doc1',
+      });
+
+      const res = await request.get('/appointments/appt1').set('x-mock-role', 'ADMIN');
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe('appt1');
+    });
+
+    it('allows Doctor to view their own appointment', async () => {
+      const prisma = require('../db/prisma').default;
+      prisma.appointments.findUnique.mockResolvedValueOnce({
+        id: 'appt1',
+        patient_id: 'pat1',
+        doctor_id: 'doc1',
+      });
+      prisma.doctors.findUnique.mockResolvedValueOnce({ id: 'doc1' });
+
+      const res = await request.get('/appointments/appt1').set('x-mock-role', 'DOCTOR');
+      expect(res.status).toBe(200);
+    });
+
+    it('rejects Doctor viewing another doctor appointment with 403', async () => {
+      const prisma = require('../db/prisma').default;
+      prisma.appointments.findUnique.mockResolvedValueOnce({
+        id: 'appt1',
+        patient_id: 'pat1',
+        doctor_id: 'other-doc',
+      });
+      prisma.doctors.findUnique.mockResolvedValueOnce({ id: 'doc1' });
+
+      const res = await request.get('/appointments/appt1').set('x-mock-role', 'DOCTOR');
+      expect(res.status).toBe(403);
+    });
+
+    it('allows Patient to view their own appointment', async () => {
+      const prisma = require('../db/prisma').default;
+      prisma.appointments.findUnique.mockResolvedValueOnce({
+        id: 'appt1',
+        patient_id: 'pat1',
+        doctor_id: 'doc1',
+      });
+      prisma.patients.findUnique.mockResolvedValueOnce({ id: 'pat1' });
+
+      const res = await request.get('/appointments/appt1').set('x-mock-role', 'PATIENT');
+      expect(res.status).toBe(200);
+    });
+
+    it('rejects Patient viewing another patient appointment with 403', async () => {
+      const prisma = require('../db/prisma').default;
+      prisma.appointments.findUnique.mockResolvedValueOnce({
+        id: 'appt1',
+        patient_id: 'other-pat',
+        doctor_id: 'doc1',
+      });
+      prisma.patients.findUnique.mockResolvedValueOnce({ id: 'pat1' });
+
+      const res = await request.get('/appointments/appt1').set('x-mock-role', 'PATIENT');
+      expect(res.status).toBe(403);
+    });
+  });
+
 });
