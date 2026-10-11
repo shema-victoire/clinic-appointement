@@ -21,7 +21,7 @@ function homeForRole(role: Profile['role']): string {
 }
 
 export default function LoginPage() {
-  const { profile, loading, signIn } = useAuth();
+  const { profile, loading, authError, signIn, signOut, retryLoadProfile } = useAuth();
   const navigate = useNavigate();
 
   // Already logged in → go home
@@ -57,6 +57,28 @@ export default function LoginPage() {
           <p className="mt-1 text-sm text-gray-500">
             Use your Google account to access your clinic portal.
           </p>
+
+          {/* Profile-load error – never redirect, always let the user act */}
+          {authError && (
+            <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              <p className="font-medium">Could not load your profile</p>
+              <p className="mt-1 text-red-600">{authError}</p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={retryLoadProfile}
+                  className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700 transition"
+                >
+                  Try again
+                </button>
+                <button
+                  onClick={signOut}
+                  className="flex-1 rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 transition"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          )}
 
           <button
             onClick={signIn}
