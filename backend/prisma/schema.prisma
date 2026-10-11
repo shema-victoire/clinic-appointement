@@ -1,0 +1,125 @@
+// Prisma schema – mirrors the PostgreSQL schema in docs/SPEC.md section 7.
+// The DATABASE_URL is read from the root .env via dotenv in server.ts,
+// but Prisma also reads it from the environment at migration/generation time.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ───────────────────────────────────────────────────────────────────
+
+enum user_role {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum appointment_status {
+  CONFIRMED
+  COMPLETED
+}
+
+enum prescription_status {
+  PENDING
+  FULFILLED
+}
+
+// ── Tables ──────────────────────────────────────────────────────────────────
+
+model profiles {
+  id         String    @id @db.Uuid
+  full_name  String
+  email      String    @unique
+  role       user_role @default(PATIENT)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+
+  // relations
+  patient  patients?
+  doctor   doctors?
+}
+
+model patients {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profile_id    String    @unique @db.Uuid
+  phone         String?
+  date_of_birth DateTime? @db.Date
+
+  profile       profiles   @relation(fields: [profile_id], references: [id], onDelete: Cascade)
+  appointments  appointments[]
+  prescriptions prescriptions[]
+}
+
+model doctors {
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profile_id     String @unique @db.Uuid
+  specialization String @default("General Practice")
+
+  profile       profiles   @relation(fields: [profile_id], references: [id], onDelete: Cascade)
+  appointments  appointments[]
+  prescriptions prescriptions[]
+}
+
+model appointments {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patient_id       String             @db.Uuid
+  doctor_id        String             @db.Uuid
+  appointment_date DateTime           @db.Date
+  appointment_time DateTime           @db.Time(6)
+  reason           String?
+  status           appointment_status @default(CONFIRMED)
+  created_at       DateTime           @default(now()) @db.Timestamptz(6)
+
+  patient      patients      @relation(fields: [patient_id], references: [id])
+  doctor       doctors       @relation(fields: [doctor_id], references: [id])
+  prescription prescriptions?
+
+  @@unique([doctor_id, appointment_date, appointment_time])
+  @@index([patient_id], name: "idx_appointments_patient")
+  @@index([doctor_id, appointment_date], name: "idx_appointments_doctor_date")
+}
+
+model medications {
+  id               String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String  @unique
+  quantity_in_stock Int    @default(0)
+  price            Decimal @db.Decimal(10, 2)
+
+  prescription_items prescription_items[]
+}
+
+model prescriptions {
+  id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  appointment_id String              @unique @db.Uuid
+  patient_id     String              @db.Uuid
+  doctor_id      String              @db.Uuid
+  status         prescription_status @default(PENDING)
+  created_at     DateTime            @default(now()) @db.Timestamptz(6)
+  fulfilled_at   DateTime?           @db.Timestamptz(6)
+
+  appointment  appointments         @relation(fields: [appointment_id], references: [id])
+  patient      patients             @relation(fields: [patient_id], references: [id])
+  doctor       doctors              @relation(fields: [doctor_id], references: [id])
+  items        prescription_items[]
+
+  @@index([patient_id], name: "idx_prescriptions_patient")
+  @@index([status], name: "idx_prescriptions_status")
+}
+
+model prescription_items {
+  id                  String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  prescription_id     String  @db.Uuid
+  medication_id       String  @db.Uuid
+  quantity            Int
+  dosage_instructions String?
+
+  prescription prescriptions @relation(fields: [prescription_id], references: [id], onDelete: Cascade)
+  medication   medications   @relation(fields: [medication_id], references: [id])
+
+  @@unique([prescription_id, medication_id])
+  @@index([medication_id], name: "idx_items_medication")
+}
