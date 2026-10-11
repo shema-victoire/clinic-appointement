@@ -11,8 +11,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { RoleGuard } from './components/RoleGuard';
 import LoginPage from './pages/LoginPage';
+import BookAppointment from './pages/patient/BookAppointment';
 import {
-  BookAppointmentPage,
   PatientAppointmentsPage,
   PatientPrescriptionsPage,
 } from './pages/patient/PatientPages';
@@ -39,7 +39,7 @@ export default function App() {
         element={
           <RoleGuard allow={['PATIENT']}>
             <Routes>
-              <Route path="book" element={<BookAppointmentPage />} />
+              <Route path="book" element={<BookAppointment />} />
               <Route path="appointments" element={<PatientAppointmentsPage />} />
               <Route path="prescriptions" element={<PatientPrescriptionsPage />} />
               <Route path="*" element={<Navigate to="book" replace />} />
