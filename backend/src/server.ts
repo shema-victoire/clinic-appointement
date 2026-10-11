@@ -25,9 +25,9 @@ import appointmentsRouter from './routes/appointments';
 import prescriptionsRouter from './routes/prescriptions';
 
 async function bootstrap() {
-  // ── External connections ────────────────────────────────────────────────
-  await connectMongo();
-  await connectRabbitMQ();
+  // ── External connections (connect in background with auto-retry) ────────
+  connectMongo().catch(() => {});
+  connectRabbitMQ().catch(() => {});
 
   // ── Express app ─────────────────────────────────────────────────────────
   const app = express();
